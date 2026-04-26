@@ -12,6 +12,12 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [userCount, setUserCount] = useState(null);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const showError = (msg) => {
+    setErrorMsg(msg);
+    Alert.alert("Connexion impossible", msg);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -33,13 +39,14 @@ export default function LoginScreen() {
   );
 
   const onLogin = async () => {
+    setErrorMsg("");
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
     if (!cleanEmail || !cleanPassword) {
-      return Alert.alert("Info", "Email et mot de passe obligatoires.");
+      return showError("Email et mot de passe obligatoires.");
     }
     if (!cleanEmail.includes("@")) {
-      return Alert.alert("Info", "Format d'email invalide.");
+      return showError("Format d'email invalide.");
     }
 
     setLoading(true);
@@ -48,7 +55,7 @@ export default function LoginScreen() {
         email: cleanEmail,
         password: cleanPassword,
       });
-      if (error) return Alert.alert("Connexion impossible", getAuthErrorMessage(error, "Connexion impossible."));
+      if (error) return showError(getAuthErrorMessage(error, "Connexion impossible."));
 
       const currentUser = data?.user;
       if (currentUser?.id) {
@@ -72,7 +79,7 @@ export default function LoginScreen() {
 
       router.replace("/(tabs)");
     } catch (e) {
-      Alert.alert("Connexion impossible", getAuthErrorMessage(e, "Connexion impossible."));
+      showError(getAuthErrorMessage(e, "Connexion impossible."));
     } finally {
       setLoading(false);
     }
@@ -101,6 +108,7 @@ export default function LoginScreen() {
         <TouchableOpacity style={[styles.btn, loading && styles.btnDisabled]} onPress={onLogin} disabled={loading} activeOpacity={INTERACTION.activeOpacity}>
           <Text style={styles.btnText}>{loading ? "Connexion..." : "Se connecter"}</Text>
         </TouchableOpacity>
+        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
         {typeof userCount === "number" ? (
           <Text style={styles.counter}>
             {userCount} utilisateur{userCount > 1 ? "s" : ""} sur l{"'"}app
@@ -125,6 +133,7 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.sm, padding: 12, alignItems: "center" },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: "#fff", fontWeight: "700" },
+  errorText: { marginTop: 10, color: COLORS.danger, fontWeight: "600", textAlign: "center" },
   counter: { marginTop: 10, textAlign: "center", color: COLORS.textMuted, fontWeight: "600" },
   link: { marginTop: 12, color: COLORS.primary, textAlign: "center", fontWeight: "600" },
   privacyLink: {

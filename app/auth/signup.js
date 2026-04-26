@@ -20,27 +20,34 @@ export default function SignupScreen() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [acceptAge, setAcceptAge] = useState(false);
 
+  const showError = (msg) => {
+    setErrorMsg(msg);
+    Alert.alert("Info", msg);
+  };
+
   const onSignup = async () => {
+    setErrorMsg("");
     if (!acceptPrivacy) {
-      return Alert.alert("Info", "Tu dois accepter la politique de confidentialite pour t'inscrire.");
+      return showError("Tu dois accepter la politique de confidentialite pour t'inscrire.");
     }
     if (!acceptTerms) {
-      return Alert.alert("Info", "Tu dois accepter les conditions d'utilisation pour t'inscrire.");
+      return showError("Tu dois accepter les conditions d'utilisation pour t'inscrire.");
     }
     if (!acceptAge) {
-      return Alert.alert("Info", "Tu dois confirmer avoir au moins 16 ans.");
+      return showError("Tu dois confirmer avoir au moins 16 ans.");
     }
     const cleanUsername = username.trim();
-    if (!cleanUsername) return Alert.alert("Info", "Pseudo obligatoire.");
+    if (!cleanUsername) return showError("Pseudo obligatoire.");
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password.trim();
-    if (!cleanEmail || !cleanPassword) return Alert.alert("Info", "Email et mot de passe obligatoires.");
-    if (!cleanEmail.includes("@")) return Alert.alert("Info", "Format d'email invalide.");
-    if (cleanPassword.length < 6) return Alert.alert("Info", "Mot de passe minimum 6 caracteres.");
+    if (!cleanEmail || !cleanPassword) return showError("Email et mot de passe obligatoires.");
+    if (!cleanEmail.includes("@")) return showError("Format d'email invalide.");
+    if (cleanPassword.length < 6) return showError("Mot de passe minimum 6 caracteres.");
 
     setLoading(true);
     try {
@@ -53,7 +60,9 @@ export default function SignupScreen() {
           },
         },
       });
-      if (error) return Alert.alert("Inscription impossible", getAuthErrorMessage(error, "Inscription impossible."));
+      if (error) {
+        return showError(getAuthErrorMessage(error, "Inscription impossible."));
+      }
 
       if (data?.user?.id) {
         const { error: profileError } = await supabase.from("profiles").upsert({
@@ -70,7 +79,7 @@ export default function SignupScreen() {
 
       router.replace(`/auth/verify-email?email=${encodeURIComponent(cleanEmail)}`);
     } catch (e) {
-      Alert.alert("Inscription impossible", getAuthErrorMessage(e, "Inscription impossible."));
+      showError(getAuthErrorMessage(e, "Inscription impossible."));
     } finally {
       setLoading(false);
     }
@@ -148,6 +157,7 @@ export default function SignupScreen() {
         <TouchableOpacity style={[styles.btn, loading && styles.btnDisabled]} onPress={onSignup} disabled={loading} activeOpacity={INTERACTION.activeOpacity}>
           <Text style={styles.btnText}>{loading ? "Inscription..." : "S'inscrire"}</Text>
         </TouchableOpacity>
+        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
         <Link href="/auth/login" asChild><TouchableOpacity><Text style={styles.link}>Deja un compte ? Se connecter</Text></TouchableOpacity></Link>
       </ScrollView>
     </SafeAreaView>
@@ -181,5 +191,6 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: COLORS.primary, borderRadius: RADIUS.sm, padding: 12, alignItems: "center" },
   btnDisabled: { opacity: 0.6 },
   btnText: { color: "#fff", fontWeight: "700" },
+  errorText: { marginTop: 10, color: COLORS.danger, fontWeight: "600", textAlign: "center" },
   link: { marginTop: 12, color: COLORS.primary, textAlign: "center", fontWeight: "600" },
 });
