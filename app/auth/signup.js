@@ -64,6 +64,12 @@ export default function SignupScreen() {
         return showError(getAuthErrorMessage(error, "Inscription impossible."));
       }
 
+      // Supabase can return an obfuscated user with no identities when the email
+      // already exists (anti-enumeration behavior, often with email confirmation on).
+      if (data?.user && (!Array.isArray(data.user.identities) || data.user.identities.length === 0)) {
+        return showError("Cet email est deja utilise. Connecte-toi ou reinitialise ton mot de passe.");
+      }
+
       if (data?.user?.id) {
         const { error: profileError } = await supabase.from("profiles").upsert({
           user_id: data.user.id,
